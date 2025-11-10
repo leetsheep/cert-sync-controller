@@ -15,8 +15,9 @@ RUN apk add --no-cache \
     ca-certificates \
     netcat-openbsd
 
-# Install kubectl
-RUN curl -LO "https://dl.k8s.io/release/v1.28.4/bin/linux/amd64/kubectl" && \
+# Install kubectl (multi-platform support)
+ARG TARGETARCH
+RUN curl -LO "https://dl.k8s.io/release/v1.28.4/bin/linux/${TARGETARCH}/kubectl" && \
     chmod +x kubectl && \
     mv kubectl /usr/local/bin/ && \
     kubectl version --client
