@@ -28,12 +28,9 @@ The image is available pre-built at https://hub.docker.com/r/leetsheep/cert-sync
 The Helm chart provides namespace-scoped RBAC for better security. See [helm/cert-sync-controller/README.md](helm/cert-sync-controller/README.md) for full documentation.
 
 ```bash
-# Add Helm repository
-helm repo add cert-sync https://leetsheep.github.io/cert-sync-controller
-helm repo update
-
-# Quick install with namespace-scoped permissions
-helm install cert-sync cert-sync/cert-sync-controller \
+# Install from OCI registry
+helm install cert-sync-controller \
+  oci://ghcr.io/leetsheep/cert-sync-controller \
   --namespace cert-sync \
   --create-namespace \
   --set remote.ip=192.168.100.123 \

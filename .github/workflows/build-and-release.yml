@@ -1,0 +1,167 @@
+name: Release (Docker + Helm)
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: leetsheep/cert-sync-controller
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      security-events: write
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version
+        id: version
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          echo "version=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "Release version: $TAG_NAME"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract base image from Dockerfile
+        id: base
+        run: |
+          BASE_IMAGE=$(grep '^FROM' Dockerfile | head -n1 | awk '{print $2}' | cut -d: -f1 | awk -F/ '{print $NF}')
+          echo "name=$BASE_IMAGE" >> $GITHUB_OUTPUT
+          echo "Base image detected: $BASE_IMAGE"
+
+      - name: Generate Docker tags
+        id: tags
+        run: |
+          BASE_IMAGE="${{ steps.base.outputs.name }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+
+          # Generate tags: version-baseimage and latest
+          TAGS="$IMAGE:$VERSION-$BASE_IMAGE,$IMAGE:latest"
+
+          echo "tags=$TAGS" >> $GITHUB_OUTPUT
+          echo "Generated tags: $TAGS"
+
+      - name: Build Docker image for scan
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          tags: ${{ env.IMAGE_NAME }}:scan
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
+            SOURCE_URL=https://github.com/${{ github.repository }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:scan
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          exit-code: '0'
+          ignore-unfixed: true
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Trivy output
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:scan
+          format: 'table'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          ignore-unfixed: true
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
+            SOURCE_URL=https://github.com/${{ github.repository }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Generate SBOM
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          format: 'cyclonedx'
+          output: 'sbom.json'
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Package Helm Chart
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Update Chart.yaml temporarily (won't be committed)
+          sed -i "s/^version:.*/version: $VERSION/" helm/cert-sync-controller/Chart.yaml
+          sed -i "s/^appVersion:.*/appVersion: \"$VERSION\"/" helm/cert-sync-controller/Chart.yaml
+
+          # Package the chart
+          helm package helm/cert-sync-controller --destination .
+
+          echo "Packaged chart with version $VERSION:"
+          ls -lh cert-sync-controller-${VERSION}.tgz
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push Helm Chart to OCI Registry
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          helm push cert-sync-controller-${VERSION}.tgz oci://ghcr.io/${{ github.repository_owner }}
+          echo "Pushed chart to oci://ghcr.io/${{ github.repository_owner }}/cert-sync-controller:${VERSION}"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Release ${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          body: |
+            Docker: `docker pull ${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}-${{ steps.base.outputs.name }}`
+            Helm: `helm install cert-sync-controller oci://ghcr.io/${{ github.repository_owner }}/cert-sync-controller --version ${{ steps.version.outputs.version }}`
+          files: |
+            sbom.json
+            cert-sync-controller-${{ steps.version.outputs.version }}.tgz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

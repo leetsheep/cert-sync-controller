@@ -2,6 +2,10 @@
 # Contains kubectl, SSH client, and other required tools
 FROM alpine:3.18
 
+# Build arguments (set by CI/CD)
+ARG VERSION=dev
+ARG SOURCE_URL=https://github.com/unknown/unknown
+
 # System updates
 RUN apk --no-cache update && apk --no-cache upgrade
 
@@ -52,6 +56,6 @@ ENTRYPOINT ["/app/entrypoint.sh"]
 
 LABEL maintainer="leetsheep"
 LABEL org.opencontainers.image.title="cert-sync-controller"
-LABEL org.opencontainers.image.version="1.0.0"
+LABEL org.opencontainers.image.version="${VERSION}"
 LABEL org.opencontainers.image.description="A controller that discovers TLS certificates from Kubernetes Ingress and syncs them to remote"
-LABEL org.opencontainers.image.source="https://github.com/leetsheep/"
+LABEL org.opencontainers.image.source="${SOURCE_URL}"

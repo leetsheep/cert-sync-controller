@@ -10,14 +10,7 @@ Helm chart for deploying cert-sync-controller, a Kubernetes controller that auto
 
 ## Installation
 
-### 1. Add repository
-
-```bash
-helm repo add cert-sync https://leetsheep.github.io/cert-sync-controller
-helm repo update
-```
-
-### 2. Create SSH key secret
+### 1. Create SSH key secret
 
 ```bash
 # Generate SSH key pair
@@ -36,12 +29,13 @@ kubectl create secret generic cert-sync-ssh-key \
 rm cert-sync-key cert-sync-key.pub
 ```
 
-### 3. Install chart
+### 2. Install chart
 
-#### From Helm repository (Recommended)
+#### From OCI registry (Recommended)
 
 ```bash
-helm install cert-sync cert-sync/cert-sync-controller \
+helm install cert-sync-controller \
+  oci://ghcr.io/leetsheep/cert-sync-controller \
   --namespace cert-sync \
   --create-namespace \
   --set remote.ip=192.168.100.123 \
@@ -52,7 +46,8 @@ helm install cert-sync cert-sync/cert-sync-controller \
 Or with a values file:
 
 ```bash
-helm install cert-sync cert-sync/cert-sync-controller \
+helm install cert-sync-controller \
+  oci://ghcr.io/leetsheep/cert-sync-controller \
   --namespace cert-sync \
   --create-namespace \
   -f my-values.yaml
@@ -171,11 +166,11 @@ rbac:
 
 ## Upgrading
 
-### From Helm repository
+### From OCI registry
 
 ```bash
-helm repo update
-helm upgrade cert-sync cert-sync/cert-sync-controller \
+helm upgrade cert-sync-controller \
+  oci://ghcr.io/leetsheep/cert-sync-controller \
   --namespace cert-sync \
   -f my-values.yaml
 ```
@@ -192,7 +187,7 @@ helm upgrade cert-sync ./helm/cert-sync-controller \
 ## Uninstallation
 
 ```bash
-helm uninstall cert-sync --namespace cert-sync
+helm uninstall cert-sync-controller --namespace cert-sync
 
 # Optionally delete the namespace
 kubectl delete namespace cert-sync

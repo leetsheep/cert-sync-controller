@@ -2,8 +2,8 @@ apiVersion: v2
 name: cert-sync-controller
 description: A Kubernetes controller that discovers TLS certificates from Ingress resources and syncs them to remote servers via SSH
 type: application
-version: 1.0.1
-appVersion: "1.0.0"
+version: 0.0.0-dev
+appVersion: "0.0.0-dev"
 keywords:
   - certificates
   - tls
