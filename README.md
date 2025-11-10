@@ -19,7 +19,7 @@ A Kubernetes controller that automatically discovers TLS certificates from Ingre
 
 ## Quick Start
 
-The image is available pre-built at https://hub.docker.com/leetsheep/cert-sync-controller.
+The image is available pre-built at https://hub.docker.com/r/leetsheep/cert-sync-controller (amd64/arm64).
 
 ## Kubernetes Deployment
 
