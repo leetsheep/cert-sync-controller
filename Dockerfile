@@ -17,7 +17,7 @@ RUN apk add --no-cache \
 
 # Install kubectl (multi-platform support)
 ARG TARGETARCH
-RUN curl -LO "https://dl.k8s.io/release/v1.28.4/bin/linux/${TARGETARCH}/kubectl" && \
+RUN curl -LO "https://dl.k8s.io/release/v1.32.1/bin/linux/${TARGETARCH}/kubectl" && \
     chmod +x kubectl && \
     mv kubectl /usr/local/bin/ && \
     kubectl version --client
