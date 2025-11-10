@@ -46,15 +46,10 @@ jobs:
           IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
           TAGS=""
 
-          # For version tags (1.0.0)
+          # For version tags (1.0.0, 1.0.0-test, etc)
           if [[ "${{ github.ref }}" == refs/tags/*.*.* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/}
-            MAJOR=$(echo $VERSION | cut -d. -f1)
-            MINOR=$(echo $VERSION | cut -d. -f1-2)
-
-            TAGS="$IMAGE:$VERSION-$BASE_IMAGE"
-            TAGS="$TAGS,$IMAGE:$MINOR-$BASE_IMAGE"
-            TAGS="$TAGS,$IMAGE:$MAJOR-$BASE_IMAGE"
+            TAG_NAME=${GITHUB_REF#refs/tags/}
+            TAGS="$IMAGE:$TAG_NAME-$BASE_IMAGE"
             TAGS="$TAGS,$IMAGE:latest"
           elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             # For main branch
