@@ -1,0 +1,29 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+*.md
+
+# Helm
+helm/
+
+# Examples
+.env.example
+docker-compose*.yml
+
+# Build artifacts
+*.tar
+cert-sync-controller.tar
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

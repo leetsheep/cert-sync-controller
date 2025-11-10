@@ -1,0 +1,49 @@
+Thank you for installing {{ .Chart.Name }}!
+
+CHART VERSION: {{ .Chart.Version }}
+APP VERSION: {{ .Chart.AppVersion }}
+NAMESPACE: {{ include "cert-sync-controller.namespace" . }}
+
+SECURITY MODE: {{ .Values.rbac.mode }}
+{{- if eq .Values.rbac.mode "namespaced" }}
+ALLOWED NAMESPACES: {{ .Values.rbac.allowedNamespaces | join ", " }}
+{{- else }}
+WARNING: Running in cluster mode - controller has cluster-wide secret access!
+{{- end }}
+
+REMOTE SERVER: {{ .Values.remote.user }}@{{ .Values.remote.ip }}
+RECONCILE INTERVAL: {{ .Values.controller.reconcileInterval }}s
+
+To check the status of the controller:
+
+  kubectl get pods -n {{ include "cert-sync-controller.namespace" . }} -l app.kubernetes.io/name={{ include "cert-sync-controller.name" . }}
+
+To view the logs:
+
+  kubectl logs -n {{ include "cert-sync-controller.namespace" . }} -l app.kubernetes.io/name={{ include "cert-sync-controller.name" . }} -f
+
+To view metrics:
+
+  kubectl port-forward -n {{ include "cert-sync-controller.namespace" . }} svc/{{ include "cert-sync-controller.fullname" . }} 9090:9090
+
+  Then visit: http://localhost:9090/metrics
+
+Health check:
+
+  kubectl port-forward -n {{ include "cert-sync-controller.namespace" . }} svc/{{ include "cert-sync-controller.fullname" . }} 8080:8080
+
+  Then visit: http://localhost:8080/
+
+{{- if not .Values.ssh.existingSecret }}
+
+WARNING: No SSH key secret configured! Please create one:
+
+  ssh-keygen -t rsa -b 4096 -f cert-sync-key -N ""
+  kubectl create secret generic cert-sync-ssh-key \
+    -n {{ include "cert-sync-controller.namespace" . }} \
+    --from-file=id_rsa=cert-sync-key
+  ssh-copy-id -i cert-sync-key.pub {{ .Values.remote.user }}@{{ .Values.remote.ip }}
+
+{{- end }}
+
+For more information, visit: https://github.com/leetsheep/cert-sync-controller

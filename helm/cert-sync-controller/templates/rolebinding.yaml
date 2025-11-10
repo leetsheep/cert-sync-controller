@@ -1,0 +1,40 @@
+{{- if eq .Values.rbac.mode "namespaced" }}
+{{- range .Values.rbac.allowedNamespaces }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "cert-sync-controller.fullname" $ }}-secret-reader
+  namespace: {{ . }}
+  labels:
+    {{- include "cert-sync-controller.labels" $ | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "cert-sync-controller.fullname" $ }}-secret-reader
+subjects:
+- kind: ServiceAccount
+  name: {{ include "cert-sync-controller.serviceAccountName" $ }}
+  namespace: {{ include "cert-sync-controller.namespace" $ }}
+{{- end }}
+{{- else if eq .Values.rbac.mode "cluster" }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "cert-sync-controller.fullname" . }}-secret-reader
+  labels:
+    {{- include "cert-sync-controller.labels" . | nindent 4 }}
+  annotations:
+    # WARNING: This binding grants cluster-wide secret access
+    # Consider using rbac.mode=namespaced for better security
+    cert-sync.io/security-warning: "cluster-wide-secret-access"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "cert-sync-controller.fullname" . }}-secret-reader
+subjects:
+- kind: ServiceAccount
+  name: {{ include "cert-sync-controller.serviceAccountName" . }}
+  namespace: {{ include "cert-sync-controller.namespace" . }}
+{{- end }}

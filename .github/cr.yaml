@@ -1,0 +1,4 @@
+# Chart Releaser configuration
+owner: leetsheep
+git-repo: cert-sync-controller
+charts-repo-url: https://leetsheep.github.io/cert-sync-controller

@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "cert-sync-controller.fullname" . }}-ingress-reader
+  labels:
+    {{- include "cert-sync-controller.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "cert-sync-controller.fullname" . }}-ingress-reader
+subjects:
+- kind: ServiceAccount
+  name: {{ include "cert-sync-controller.serviceAccountName" . }}
+  namespace: {{ include "cert-sync-controller.namespace" . }}

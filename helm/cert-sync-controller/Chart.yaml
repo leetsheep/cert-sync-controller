@@ -1,0 +1,16 @@
+apiVersion: v2
+name: cert-sync-controller
+description: A Kubernetes controller that discovers TLS certificates from Ingress resources and syncs them to remote servers via SSH
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - certificates
+  - tls
+  - cert-manager
+  - ingress
+  - sync
+maintainers:
+  - name: leetsheep
+sources:
+  - https://github.com/leetsheep/cert-sync-controller

@@ -1,0 +1,131 @@
+# Default values for cert-sync-controller
+
+# Image configuration
+image:
+  repository: leetsheep/cert-sync-controller
+  pullPolicy: IfNotPresent
+  tag: ""  # Defaults to Chart.appVersion
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# RBAC configuration
+rbac:
+  # RBAC mode:
+  # - "namespaced": RoleBindings per namespace (RECOMMENDED for production)
+  # - "cluster": ClusterRoleBinding for all namespaces (NOT RECOMMENDED - security risk)
+  mode: namespaced
+
+  # List of namespaces where the controller can read secrets
+  # Only used when mode=namespaced
+  allowedNamespaces:
+    - cert-manager
+    - traefik
+    - default
+
+# ServiceAccount configuration
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Remote server configuration
+remote:
+  # IP address or hostname of the remote server
+  ip: "192.168.100.123"
+
+  # SSH user on remote server
+  user: "cert-sync"
+
+  # Remote directories
+  certDir: "/opt/traefik/certs"
+  configDir: "/etc/traefik/config"
+
+  # Skip config generation (useful for Nginx, HAProxy, etc.)
+  skipConfigGeneration: false
+
+# SSH key configuration
+ssh:
+  # Existing secret name containing SSH private key
+  # The secret must contain a key named 'id_rsa'
+  existingSecret: "cert-sync-ssh-key"
+
+# Controller configuration
+controller:
+  # Reconciliation interval in seconds
+  reconcileInterval: 30
+
+  # Enable debug logging
+  debug: false
+
+# Resource limits
+resources:
+  requests:
+    memory: "64Mi"
+    cpu: "50m"
+  limits:
+    memory: "128Mi"
+    cpu: "200m"
+
+# Liveness probe configuration
+livenessProbe:
+  enabled: true
+  httpGet:
+    path: /
+    port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# Readiness probe configuration
+readinessProbe:
+  enabled: true
+  httpGet:
+    path: /
+    port: 8080
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+
+# Service configuration
+service:
+  type: ClusterIP
+  metricsPort: 9090
+  healthPort: 8080
+
+# ServiceMonitor for Prometheus Operator
+serviceMonitor:
+  enabled: false
+  interval: 30s
+  scrapeTimeout: 10s
+  labels: {}
+
+# Pod annotations
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9090"
+  prometheus.io/path: "/metrics"
+
+# Pod security context
+podSecurityContext: {}
+
+# Container security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
