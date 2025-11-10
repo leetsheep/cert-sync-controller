@@ -1,0 +1,10 @@
+# Helm templates should not be detected as Smarty
+helm/**/templates/*.yaml linguist-language=YAML
+helm/**/templates/*.yml linguist-language=YAML
+helm/**/templates/*.tpl linguist-detectable=false
+
+# Dockerfile
+Dockerfile linguist-language=Dockerfile
+
+# Shell scripts
+*.sh linguist-language=Shell
