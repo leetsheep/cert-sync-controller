@@ -129,15 +129,19 @@ jobs:
       - name: Package Helm Chart
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+          BASE_IMAGE="${{ steps.base.outputs.name }}"
+
+          # The actual Docker tag that was built
+          DOCKER_TAG="${VERSION}-${BASE_IMAGE}"
 
           # Update Chart.yaml temporarily (won't be committed)
           sed -i "s/^version:.*/version: $VERSION/" helm/cert-sync-controller/Chart.yaml
-          sed -i "s/^appVersion:.*/appVersion: \"$VERSION\"/" helm/cert-sync-controller/Chart.yaml
+          sed -i "s/^appVersion:.*/appVersion: \"$DOCKER_TAG\"/" helm/cert-sync-controller/Chart.yaml
 
           # Package the chart
           helm package helm/cert-sync-controller --destination .
 
-          echo "Packaged chart with version $VERSION:"
+          echo "Packaged chart with version $VERSION and appVersion $DOCKER_TAG:"
           ls -lh cert-sync-controller-${VERSION}.tgz
 
       - name: Log in to GitHub Container Registry
@@ -158,8 +162,19 @@ jobs:
           prerelease: false
           generate_release_notes: true
           body: |
-            Docker: `docker pull ${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}-${{ steps.base.outputs.name }}`
-            Helm: `helm install cert-sync-controller oci://ghcr.io/${{ github.repository_owner }}/cert-sync-controller --version ${{ steps.version.outputs.version }}`
+            ## Installation
+
+            ### Docker
+            ```bash
+            docker pull ${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}-${{ steps.base.outputs.name }}
+            ```
+
+            ### Helm
+            ```bash
+            helm install cert-sync-controller oci://ghcr.io/${{ github.repository_owner }}/cert-sync-controller --version ${{ steps.version.outputs.version }}
+            ```
+
+            The Helm chart will automatically use the correct Docker image tag: `${{ steps.version.outputs.version }}-${{ steps.base.outputs.name }}`
           files: |
             sbom.json
             cert-sync-controller-${{ steps.version.outputs.version }}.tgz
