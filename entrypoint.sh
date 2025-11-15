@@ -75,12 +75,6 @@ setup() {
   # Initialize hash tracking file
   touch "$CERT_HASH_FILE"
 
-  echo "[INIT] Testing kubectl access..."
-  if ! kubectl get nodes >/dev/null 2>&1; then
-    echo "[ERROR] Cannot access Kubernetes API"
-    exit 1
-  fi
-
   # Test SSH connection
   echo "[INIT] Testing SSH connection to proxy..."
   if ssh -i ~/.ssh/id_rsa -o ConnectTimeout="$SSH_TIMEOUT" -o BatchMode=yes \
