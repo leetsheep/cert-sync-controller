@@ -42,7 +42,6 @@ RUN mkdir -p /home/cert-sync/.kube /home/cert-sync/.ssh /home/cert-sync/.cache/c
  && chmod 700 /home/cert-sync/.ssh /home/cert-sync/.cache/cert-sync
 
 ENV HOME=/home/cert-sync
-ENV KUBECONFIG=/home/cert-sync/.kube/config
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
