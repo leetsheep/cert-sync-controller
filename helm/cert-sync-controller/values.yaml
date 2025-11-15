@@ -109,7 +109,9 @@ podAnnotations:
   prometheus.io/path: "/metrics"
 
 # Pod security context
-podSecurityContext: {}
+# fsGroup ensures that mounted secrets are readable by the container user
+podSecurityContext:
+  fsGroup: 1000
 
 # Container security context
 securityContext:
