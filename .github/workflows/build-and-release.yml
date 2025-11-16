@@ -50,8 +50,16 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
 
-          # Generate tags: version-baseimage and latest
-          TAGS="$IMAGE:$VERSION-$BASE_IMAGE,$IMAGE:latest"
+          # Always create version-specific tag
+          TAGS="$IMAGE:$VERSION-$BASE_IMAGE"
+
+          # Only add 'latest' tag for stable releases (no pre-release indicators)
+          if [[ ! "$VERSION" =~ -(beta|alpha|rc|pre|dev) ]]; then
+            TAGS="$TAGS,$IMAGE:latest"
+            echo "Adding 'latest' tag for stable release"
+          else
+            echo "Skipping 'latest' tag for pre-release version: $VERSION"
+          fi
 
           echo "tags=$TAGS" >> $GITHUB_OUTPUT
           echo "Generated tags: $TAGS"
@@ -153,13 +161,25 @@ jobs:
           helm push cert-sync-controller-${VERSION}.tgz oci://ghcr.io/${{ github.repository_owner }}
           echo "Pushed chart to oci://ghcr.io/${{ github.repository_owner }}/cert-sync-controller:${VERSION}"
 
+      - name: Check if pre-release
+        id: prerelease
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if [[ "$VERSION" =~ -(beta|alpha|rc|pre|dev) ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+            echo "This is a pre-release: $VERSION"
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            echo "This is a stable release: $VERSION"
+          fi
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.version.outputs.version }}
           name: Release ${{ steps.version.outputs.version }}
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.prerelease.outputs.is_prerelease }}
           generate_release_notes: true
           body: |
             ## Installation
